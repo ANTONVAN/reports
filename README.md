@@ -1,12 +1,12 @@
 # Laboratorio Ramos - Reports Dashboard
 
-Internal reporting dashboard for Laboratorio Ramos. Connects to the production SQL Server database and displays operational reports with filtering, sorting, search, and export capabilities.
+Internal reporting dashboard for Laboratorio Ramos. Connects to the production SQL Server database and displays operational reports with filtering, sorting, search, and export capabilities. Protected by JWT authentication.
 
 ## Architecture
 
 ```
 Cloudflare Pages (React frontend)
-        ↓ HTTPS
+        ↓ HTTPS (JWT auth)
 VPS - reports-api.laboratorioramos.com.mx (Express API)
         ↓ TCP :1433
 SQL Server 172.176.243.203
@@ -14,13 +14,15 @@ SQL Server 172.176.243.203
 
 ## Features
 
-- Date range filtering
-- Summary cards (Sucursales, Estudios, Rutas, Maquiladores, status counts)
-- Sortable data table with sticky header
-- Global search across all fields
-- Export to CSV, Excel (.xlsx), and PDF
-- Responsive design
-- Page load animations
+- **Authentication** — JWT-based login with 24h token expiry, no database required
+- **Date range filtering** — defaults to current month
+- **Summary cards** — Sucursales, Estudios, Rutas, Maquiladores, and status counts (Enviado, Solicitado, Recibido, Cancelado)
+- **Sortable data table** — click column headers to sort, sticky header turns blue on scroll
+- **Global search** — search across all fields
+- **Pagination** — 100 records per page with smooth scroll-to-top on page change
+- **Export** — CSV, Excel (.xlsx), and PDF with colored status and date range in header
+- **Responsive design** — table view on desktop, card layout on mobile
+- **Page load animations** — staggered fade-in for header, cards, and table rows
 
 ## Project Structure
 
@@ -29,12 +31,14 @@ dashboard/
 ├── src/                    # React frontend
 │   ├── App.jsx             # Main dashboard component
 │   ├── App.css             # Dashboard styles
+│   ├── Login.jsx           # Login page component
+│   ├── Login.css           # Login styles
 │   └── index.css           # Base styles
 ├── server/                 # Express backend (deployed on VPS)
-│   ├── index.js            # API server
+│   ├── index.js            # API server with auth middleware
 │   ├── reports.js          # Report query definitions
 │   ├── package.json        # Backend dependencies
-│   ├── .env                # Database credentials (not in git)
+│   ├── .env                # Credentials (not in git)
 │   └── nginx-reports-api.conf
 ├── .env.production         # Frontend production env vars
 └── package.json            # Frontend dependencies
@@ -46,15 +50,27 @@ dashboard/
 # Install dependencies
 npm install
 
-# Start the backend API (requires .env in server/)
-npm run server
-
-# Start the frontend dev server
+# Start the frontend dev server (connects to remote API via .env)
 npm run dev
+
+# Or start a local backend (requires server/.env with DB credentials)
+npm run server
 ```
 
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3001
+
+## Authentication
+
+The backend uses JWT tokens. Credentials are configured in the server `.env`:
+
+```
+AUTH_USER=admin
+AUTH_PASSWORD=LabRamos2026!
+JWT_SECRET=your-secret-key
+```
+
+The token expires after 24 hours. The frontend auto-redirects to login on 401 responses.
 
 ## Adding a New Report
 
@@ -91,12 +107,26 @@ Then build the frontend page to consume it.
 cd /var/www/reports-api
 npm install
 pm2 start index.js --name reports-api
+pm2 save
+pm2 startup
 ```
+
+### CORS
+
+Multiple origins are supported in the server `.env`, comma-separated:
+
+```
+CORS_ORIGIN=https://reports-ramos.pages.dev,https://reports.laboratorioramos.com.mx,http://localhost:5173
+```
+
+Use `CORS_ORIGIN=*` to allow all origins.
 
 ## API Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/health` | Health check |
-| `GET /api/reports` | List available reports |
-| `GET /api/reports/:name?params` | Execute a report |
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| `POST /api/auth/login` | No | Login with username/password, returns JWT |
+| `GET /api/auth/verify` | Yes | Verify token validity |
+| `GET /api/health` | No | Health check |
+| `GET /api/reports` | Yes | List available reports |
+| `GET /api/reports/:name?params` | Yes | Execute a report |

@@ -4,6 +4,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table';
 import {
@@ -23,14 +24,30 @@ import {
   CheckCircle,
   XCircle,
   Factory,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Login from './Login';
 import './App.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const API_URL = `${API_BASE}/api/reports/maquilas`;
+
+function getToken() {
+  return localStorage.getItem('token');
+}
+
+function authFetch(url) {
+  return fetch(url, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -238,6 +255,45 @@ const columns = [
   },
 ];
 
+const PAGE_SIZE = 100;
+
+function MobileCard({ row }) {
+  return (
+    <div className="mobile-card">
+      <div className="mobile-card-header">
+        <span className="mobile-card-solicitud">{row.Solicitud}</span>
+        <StatusBadge status={row.Estatus} />
+      </div>
+      <div className="mobile-card-body">
+        <div className="mobile-card-row">
+          <span className="mobile-card-label">Sucursal</span>
+          <span>{row.Sucursal}</span>
+        </div>
+        <div className="mobile-card-row">
+          <span className="mobile-card-label">Médico</span>
+          <span>{row.Medico}</span>
+        </div>
+        <div className="mobile-card-row">
+          <span className="mobile-card-label">Estudio</span>
+          <span>{row.ClaveEstudio} — {row.NombreEstudio}</span>
+        </div>
+        <div className="mobile-card-row">
+          <span className="mobile-card-label">Ruta</span>
+          <span>{row.Ruta}</span>
+        </div>
+        <div className="mobile-card-row">
+          <span className="mobile-card-label">Maquilador</span>
+          <span>{row.Maquilador}</span>
+        </div>
+        <div className="mobile-card-row">
+          <span className="mobile-card-label">Entrega</span>
+          <span>{formatDate(row.FechaEntrega)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function getDefaultDates() {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -249,6 +305,29 @@ function getDefaultDates() {
 }
 
 export default function App() {
+  const [authed, setAuthed] = useState(!!getToken());
+  const [username, setUsername] = useState(localStorage.getItem('username') || '');
+
+  const handleLogin = (data) => {
+    setAuthed(true);
+    setUsername(data.username);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    setAuthed(false);
+    setUsername('');
+  };
+
+  if (!authed) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  return <Dashboard username={username} onLogout={handleLogout} />;
+}
+
+function Dashboard({ username, onLogout }) {
   const defaults = getDefaultDates();
   const [startDate, setStartDate] = useState(defaults.startDate);
   const [endDate, setEndDate] = useState(defaults.endDate);
@@ -258,15 +337,20 @@ export default function App() {
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState([]);
   const [isSticky, setIsSticky] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
   const sentinelRef = useRef(null);
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API_URL}?startDate=${startDate}&endDate=${endDate}`
       );
+      if (res.status === 401) {
+        onLogout();
+        return;
+      }
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const json = await res.json();
       setData(json);
@@ -307,12 +391,20 @@ export default function App() {
   const table = useReactTable({
     data,
     columns,
-    state: { globalFilter, sorting },
+    state: { globalFilter, sorting, pagination: { pageIndex, pageSize: PAGE_SIZE } },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function'
+        ? updater({ pageIndex, pageSize: PAGE_SIZE })
+        : updater;
+      setPageIndex(next.pageIndex);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   return (
@@ -325,6 +417,12 @@ export default function App() {
             className="header-logo"
           />
           <p className="subtitle">Reporte de Maquilas</p>
+          <div className="header-user">
+            <span>{username}</span>
+            <button className="btn-logout" onClick={onLogout} title="Cerrar sesión">
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -441,9 +539,9 @@ export default function App() {
         {/* Error */}
         {error && <div className="error-msg">Error: {error}</div>}
 
-        {/* Table */}
+        {/* Desktop Table */}
         <div ref={sentinelRef} className="table-sentinel" />
-        <section className="table-container">
+        <section className="table-container desktop-only">
           <table>
             <thead className={isSticky ? 'stuck' : ''}>
               {table.getHeaderGroups().map((hg) => (
@@ -488,8 +586,57 @@ export default function App() {
           </table>
         </section>
 
-        <footer className="footer">
-          {table.getFilteredRowModel().rows.length} registros encontrados
+        {/* Mobile Cards */}
+        <section className="mobile-cards mobile-only">
+          {table.getRowModel().rows.length === 0 ? (
+            <div className="empty-state">{loading ? 'Cargando...' : 'Sin resultados'}</div>
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <MobileCard key={row.id} row={row.original} />
+            ))
+          )}
+        </section>
+
+        {/* Pagination */}
+        <footer className="pagination-footer">
+          <span className="pagination-info">
+            {table.getFilteredRowModel().rows.length} registros
+            {table.getPageCount() > 1 && (
+              <> — Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}</>
+            )}
+          </span>
+          {table.getPageCount() > 1 && (
+            <div className="pagination-controls">
+              <button
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+                className="pagination-btn"
+              >
+                <ChevronsLeft size={16} />
+              </button>
+              <button
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="pagination-btn"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="pagination-btn"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <button
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+                className="pagination-btn"
+              >
+                <ChevronsRight size={16} />
+              </button>
+            </div>
+          )}
         </footer>
       </main>
     </div>
