@@ -31,6 +31,7 @@ export default function Login({ onLogin }) {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('username', data.username);
+      localStorage.setItem('role', data.role);
       onLogin(data);
     } catch {
       setError('No se pudo conectar al servidor');

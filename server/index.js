@@ -21,8 +21,15 @@ app.use(cors({
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
-const AUTH_USER = process.env.AUTH_USER || 'admin';
-const AUTH_PASSWORD = process.env.AUTH_PASSWORD || 'admin';
+
+// Parse users from env (supports multiple hardcoded users with roles)
+const AUTH_USERS = JSON.parse(process.env.AUTH_USERS || '[{"username":"admin","password":"admin","role":"admin"}]');
+
+// Which reports each role can access
+const ROLE_REPORTS = {
+  admin: ['indicadores-daily', 'indicadores-monthly', 'medicos'],
+  usuario: ['maquilas'],
+};
 
 // --- Auth ---
 
@@ -46,9 +53,10 @@ function authMiddleware(req, res, next) {
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
 
-  if (username === AUTH_USER && password === AUTH_PASSWORD) {
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
-    return res.json({ token, username, expiresIn: '24h' });
+  const user = AUTH_USERS.find(u => u.username === username && u.password === password);
+  if (user) {
+    const token = jwt.sign({ username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    return res.json({ token, username: user.username, role: user.role, expiresIn: '24h' });
   }
 
   return res.status(401).json({ error: 'Invalid credentials' });
@@ -56,7 +64,7 @@ app.post('/api/auth/login', (req, res) => {
 
 // Verify token endpoint
 app.get('/api/auth/verify', authMiddleware, (req, res) => {
-  res.json({ valid: true, username: req.user.username });
+  res.json({ valid: true, username: req.user.username, role: req.user.role });
 });
 
 // --- Database ---
@@ -96,13 +104,41 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// All report routes require auth
+// All report routes require auth - filtered by role
 app.get('/api/reports', authMiddleware, (req, res) => {
-  res.json(Object.keys(reports));
+  const allowed = ROLE_REPORTS[req.user.role] || [];
+  res.json(allowed.filter(r => reports[r]));
+});
+
+// Get filter options for a report
+app.get('/api/reports/:reportName/meta', authMiddleware, async (req, res) => {
+  const allowed = ROLE_REPORTS[req.user.role] || [];
+  if (!allowed.includes(req.params.reportName)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const report = reports[req.params.reportName];
+  if (!report) {
+    return res.status(404).json({ error: `Report "${req.params.reportName}" not found` });
+  }
+  // Support async meta (for medicos comboboxes)
+  if (typeof report.meta === 'function') {
+    try {
+      const db = await getPool();
+      const meta = await report.meta(db);
+      return res.json(meta);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+  res.json(report.meta || {});
 });
 
 app.get('/api/reports/:reportName', authMiddleware, async (req, res) => {
   try {
+    const allowed = ROLE_REPORTS[req.user.role] || [];
+    if (!allowed.includes(req.params.reportName)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     const report = reports[req.params.reportName];
     if (!report) {
       return res.status(404).json({ error: `Report "${req.params.reportName}" not found` });
