@@ -13,7 +13,7 @@ import {
   ArrowDown,
   Building2,
   FlaskConical,
-  Route,
+
   Loader2,
   Download,
   FileSpreadsheet,
@@ -358,7 +358,7 @@ const maquilasColumns = [
   { accessorKey: 'ClaveEstudio', header: 'Clave Estudio' },
   { accessorKey: 'NombreEstudio', header: 'Nombre Estudio' },
   { accessorKey: 'Estatus', header: 'Estatus', cell: ({ getValue }) => <StatusBadge status={getValue()} /> },
-  { accessorKey: 'Ruta', header: 'Ruta' },
+
   { accessorKey: 'Maquilador', header: 'Maquilador' },
   { accessorKey: 'Urgencia', header: 'Urgencia', cell: ({ getValue }) => <UrgenciaBadge urgencia={getValue()} /> },
   { accessorKey: 'FechaEntrega', header: 'Fecha Entrega', cell: ({ getValue }) => formatDate(getValue()) },
@@ -366,8 +366,8 @@ const maquilasColumns = [
 
 function exportMaquilasCSV(data) {
   if (!data.length) return;
-  const headers = ['Sucursal','Solicitud','Nombre Paciente','Medico','Clave Estudio','Nombre Estudio','Estatus','Ruta','Maquilador','Urgencia','Fecha de Entrega'];
-  const keys = ['Sucursal','Solicitud','NombrePaciente','Medico','ClaveEstudio','NombreEstudio','Estatus','Ruta','Maquilador','Urgencia','FechaEntrega'];
+  const headers = ['Sucursal','Solicitud','Nombre Paciente','Medico','Clave Estudio','Nombre Estudio','Estatus','Maquilador','Urgencia','Fecha de Entrega'];
+  const keys = ['Sucursal','Solicitud','NombrePaciente','Medico','ClaveEstudio','NombreEstudio','Estatus','Maquilador','Urgencia','FechaEntrega'];
   const csv = [
     headers.join(','),
     ...data.map((row) => keys.map((k) => `"${(row[k] ?? '').toString().replace(/"/g, '""')}"`).join(',')),
@@ -383,8 +383,8 @@ function exportMaquilasCSV(data) {
 
 function exportMaquilasExcel(data) {
   if (!data.length) return;
-  const headers = ['Sucursal','Solicitud','Nombre Paciente','Médico','Clave Estudio','Nombre Estudio','Estatus','Ruta','Maquilador','Urgencia','Fecha de Entrega'];
-  const keys = ['Sucursal','Solicitud','NombrePaciente','Medico','ClaveEstudio','NombreEstudio','Estatus','Ruta','Maquilador','Urgencia','FechaEntrega'];
+  const headers = ['Sucursal','Solicitud','Nombre Paciente','Médico','Clave Estudio','Nombre Estudio','Estatus','Maquilador','Urgencia','Fecha de Entrega'];
+  const keys = ['Sucursal','Solicitud','NombrePaciente','Medico','ClaveEstudio','NombreEstudio','Estatus','Maquilador','Urgencia','FechaEntrega'];
   const rows = data.map((row) =>
     keys.reduce((acc, key, i) => {
       acc[headers[i]] = key === 'FechaEntrega' ? formatDate(row[key]) : (row[key] ?? '');
@@ -539,10 +539,9 @@ function MaquilasReport({ onLogout }) {
 
   const summary = useMemo(() => {
     const sucursales = new Set(data.map(r => r.Sucursal));
-    const rutas = new Set(data.map(r => r.Ruta));
     const estatuses = data.reduce((acc, r) => { acc[r.Estatus] = (acc[r.Estatus] || 0) + 1; return acc; }, {});
     const maquiladores = new Set(data.map(r => r.Maquilador));
-    return { sucursales: sucursales.size, estudios: data.length, rutas: rutas.size, maquiladores: maquiladores.size, estatuses };
+    return { sucursales: sucursales.size, estudios: data.length, maquiladores: maquiladores.size, estatuses };
   }, [data]);
 
   return (
@@ -579,7 +578,7 @@ function MaquilasReport({ onLogout }) {
       <section className="summary">
         <SummaryCard icon={Building2} label="Sucursales" value={summary.sucursales} color="card-blue" />
         <SummaryCard icon={FlaskConical} label="Estudios" value={summary.estudios} color="card-purple" />
-        <SummaryCard icon={Route} label="Rutas" value={summary.rutas} color="card-green" />
+
         <SummaryCard icon={Factory} label="Maquiladores" value={summary.maquiladores} color="card-orange" />
         <SummaryCard icon={Send} label="Enviado" value={summary.estatuses['Enviado'] || 0} color="card-teal" />
         <SummaryCard icon={ClipboardList} label="Solicitado" value={summary.estatuses['Solicitado'] || 0} color="card-yellow" />
