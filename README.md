@@ -31,8 +31,8 @@ SQL Server 172.176.243.203
 
 | User | Password | Role | Reports |
 |------|----------|------|---------|
-| `admin` | `LabRamos2026!` | admin | Dashboard, Indicadores Diario, Indicadores Mensual, Médicos |
-| `usuario` | `Usuario2026!` | usuario | Dashboard, Maquilas |
+| `admin` | `Your Password` | admin | Dashboard, Indicadores Diario, Indicadores Mensual, Médicos |
+| `usuario` | `Your Password` | usuario | Dashboard, Maquilas |
 
 Users are configured in `server/.env` as a JSON array (`AUTH_USERS`). No database is needed for authentication.
 
