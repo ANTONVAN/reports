@@ -131,14 +131,15 @@ const reports = {
             S.SucursalId,
             COUNT(*) AS CantidadSolicitudes
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
-          WHERE S.SucursalId IN (
+          WHERE S.Procedencia = 2 AND 
+          S.SucursalId IN (
             '92BB555D-8D08-4107-97A5-6296FBA09A49',
             'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
             '22C17091-64D1-4FFB-9387-147CA43132D2',
             'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
           )
           AND S.FechaCreo >= @startDate
-          AND S.FechaCreo < @endDate
+          AND S.FechaCreo < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
           GROUP BY CONVERT(date, DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
         ),
@@ -150,14 +151,15 @@ const reports = {
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
           LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
             ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
-          WHERE S.SucursalId IN (
+          WHERE S.Procedencia = 2 AND 
+          S.SucursalId IN (
             '92BB555D-8D08-4107-97A5-6296FBA09A49',
             'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
             '22C17091-64D1-4FFB-9387-147CA43132D2',
             'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
           )
           AND S.FechaCreo >= @startDate
-          AND S.FechaCreo < @endDate
+          AND S.FechaCreo < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
           GROUP BY CONVERT(date, DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
         )
@@ -207,14 +209,15 @@ const reports = {
             S.SucursalId,
             COUNT(*) AS CantidadSolicitudes
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
-          WHERE S.SucursalId IN (
+          WHERE S.Procedencia = 2 AND 
+          S.SucursalId IN (
             '92BB555D-8D08-4107-97A5-6296FBA09A49',
             'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
             '22C17091-64D1-4FFB-9387-147CA43132D2',
             'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
           )
           AND S.FechaCreo >= @startDate
-          AND S.FechaCreo < @endDate
+          AND S.FechaCreo < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
           GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
         ),
@@ -227,14 +230,15 @@ const reports = {
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
           LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
             ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
-          WHERE S.SucursalId IN (
+          WHERE S.Procedencia = 2 AND 
+          S.SucursalId IN (
             '92BB555D-8D08-4107-97A5-6296FBA09A49',
             'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
             '22C17091-64D1-4FFB-9387-147CA43132D2',
             'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
           )
           AND S.FechaCreo >= @startDate
-          AND S.FechaCreo < @endDate
+          AND S.FechaCreo < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
           GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
         )
@@ -345,7 +349,7 @@ const reports = {
           WHERE ${medicoFilter}
             ${especialidadFilter}
             AND S.FechaCreo >= @startDate
-            AND S.FechaCreo < @endDate
+            AND S.FechaCreo < DATEADD(day, 1, @endDate)
             AND S.EstatusId <> 3
             ${ciudadFilter}
           GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.MedicoId
@@ -361,7 +365,7 @@ const reports = {
             ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
           WHERE S.MedicoId IS NOT NULL
             AND S.FechaCreo >= @startDate
-            AND S.FechaCreo < @endDate
+            AND S.FechaCreo < DATEADD(day, 1, @endDate)
             AND S.EstatusId <> 3
           GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.MedicoId
         ),
