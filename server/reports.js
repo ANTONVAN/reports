@@ -161,6 +161,7 @@ const reports = {
           AND S.FechaCreo >= @startDate
           AND S.FechaCreo < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
+          AND P.FormaPagoId <> 5
           GROUP BY CONVERT(date, DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
         )
         SELECT
@@ -240,6 +241,7 @@ const reports = {
           AND S.FechaCreo >= @startDate
           AND S.FechaCreo < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
+          AND P.FormaPagoId <> 5
           GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
         )
         SELECT
@@ -367,6 +369,7 @@ const reports = {
             AND S.FechaCreo >= @startDate
             AND S.FechaCreo < DATEADD(day, 1, @endDate)
             AND S.EstatusId <> 3
+            AND P.FormaPagoId <> 5
           GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.MedicoId
         ),
         Totales AS (
