@@ -409,9 +409,9 @@ const reports = {
       request.input('endDate', sql.NVarChar, end);
 
       return `
-        SELECT RC.Clave as 'Clave Reactivo'
-            ,RC.Nombre as 'Nombre Reactivo'
-            ,RC.ClaveSistema as 'Clave Contpaq'
+        SELECT RC.Clave as 'ClaveReactivo'
+            ,RC.Nombre as 'NombreReactivo'
+            ,RC.ClaveSistema as 'ClaveContpaq'
             ,COUNT(*) AS Recuento
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Resultados_Clinicos] AS R
           INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[Relacion_Reactivo_Parametro] as RP
