@@ -121,6 +121,7 @@ const REPORT_CONFIG = {
   'indicadores-monthly': { name: 'Indicadores Mensual', icon: BarChart3 },
   'medicos': { name: 'Reporte de Médicos', icon: Stethoscope },
   'maquilas': { name: 'Reporte de Maquilas', icon: Factory },
+  'conteo-pruebas': { name: 'Conteo de Pruebas', icon: ClipboardList }
 };
 
 // ─── Multi-select component ────────────────────────────────────────
@@ -919,6 +920,141 @@ function MedicosReport({ onLogout }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// REPORTE DE CONTEO DE PRUEBAS
+// ═══════════════════════════════════════════════════════════════════
+
+const conteoPruebasColumns = [
+  { accessorKey: 'ClaveReactivo', header: 'Clave' },
+  { accessorKey: 'NombreReactivo', header: 'Nombre'},
+  { accessorKey: 'ClaveContpaq', header: 'Clave Contpaq'},
+  { accessorKey: 'Recuento', header: 'Recuento'}
+];
+
+function exportConteoPruebasExcel(data) {
+  if (!data.length) return;
+  const headers = ['Clave', 'Nombre', 'Clave Contpaq', 'Recuento'];
+  const rows = data.map(row => ({
+    'Clave': row.ClaveReactivo,
+    'Nombre': row.NombreReactivo,
+    'Clave Contpaq': row.ClaveContpaq,
+    'Recuento': row.Recuento,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 16) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Conteo de Pruebas');
+  XLSX.writeFile(wb, `conteo_pruebas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function exportConteoPruebasPDF(data, startDate, endDate) {
+  if (!data.length) return;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const m = 15;
+
+  doc.setFontSize(11); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+  doc.text('Laboratorio Alfonso Ramos S.A de C.V.', pageW / 2, m + 4, { align: 'center' });
+  doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  doc.text('CONTEO DE PRUEBAS', pageW / 2, m + 10, { align: 'center' });
+  doc.setFontSize(7); doc.setTextColor(100);
+  doc.text(`Fecha Inicio: ${startDate}    Fecha Fin: ${endDate}`, pageW / 2, m + 15, { align: 'center' });
+
+  autoTable(doc, {
+    startY: m + 20,
+    head: [['Clave', 'Nombre', 'Clave Contpaq', 'Recuento']],
+    body: data.map(row => [
+      row.ClaveReactico,
+      row.NombreReactivo,
+      row.ClaveContpaq,
+      Number(row.Recuento).toLocaleString('es-MX'),
+    ]),
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: { 1: { cellWidth: 80 } },
+    margin: { left: m, right: m },
+  });
+
+  const tp = doc.getNumberOfPages();
+  for (let i = 1; i <= tp; i++) {
+    doc.setPage(i);
+    doc.setFontSize(6); doc.setTextColor(120); doc.setFont(undefined, 'normal');
+    const ts = `${new Date().toLocaleDateString('es-MX')} ${new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`;
+    doc.text(ts, m, pageH - 8);
+    doc.text('Este informe no podrá ser reproducido total o parcialmente.', m, pageH - 4);
+    doc.text(`Página ${i}/${tp}`, pageW - m, pageH - 8, { align: 'right' });
+  }
+
+  doc.save(`conteo_pruebas_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+function ConteoPruebasReport({ onLogout }) {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const defaultStart = today;
+  const defaultEnd = today;
+
+  const [startDate, setStartDate] = useState(defaultStart);
+  const [endDate, setEndDate] = useState(defaultEnd);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  const fetchData = async () => {
+    setLoading(true); setError(null);
+    try {
+      const params = new URLSearchParams({ startDate, endDate });
+      const res = await authFetch(`${API_BASE}/api/reports/conteo-pruebas?${params}`);
+      if (res.status === 401) { onLogout(); return; }
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const json = await res.json();
+      // Mark TOTAL rows for styling
+      setData(json.map(row => ({ ...row, _isTotal: row.Sucursal === 'TOTAL' })));
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  return (
+    <>
+      <section className="filters">
+        <div className="filter-group">
+          <label>Fecha Inicio</label>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
+        <div className="filter-group">
+          <label>Fecha Fin</label>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
+        <button className="btn-primary" onClick={fetchData} disabled={loading}>
+          {loading ? <Loader2 className="spin" size={16} /> : 'Consultar'}
+        </button>
+        <div className="export-group">
+          <button className="btn-secondary btn-excel" onClick={() => exportConteoPruebasExcel(data)} disabled={!data.length}>
+            <FileSpreadsheet size={16} /> Excel
+          </button>
+          <button className="btn-secondary btn-pdf" onClick={() => exportConteoPruebasPDF(data, startDate, endDate)} disabled={!data.length}>
+            <FileText size={16} /> PDF
+          </button>
+        </div>
+      </section>
+
+      {error && <div className="error-msg">Error: {error}</div>}
+
+      <section className="search-bar">
+        <Search size={18} className="search-icon" />
+        <input type="text" placeholder="Buscar..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} />
+      </section>
+
+      <DataTable data={data} columns={conteoPruebasColumns} loading={loading} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // DASHBOARD VIEW (KPIs + Charts)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1228,7 +1364,7 @@ export default function App() {
 
 function Dashboard({ username, role, onLogout }) {
   const allowedReports = role === 'admin'
-    ? ['dashboard', 'indicadores-daily', 'indicadores-monthly', 'medicos']
+    ? ['dashboard', 'indicadores-daily', 'indicadores-monthly', 'medicos', 'conteo-pruebas']
     : ['dashboard', 'maquilas'];
 
   const [activeReport, setActiveReport] = useState(allowedReports[0]);
@@ -1249,6 +1385,8 @@ function Dashboard({ username, role, onLogout }) {
         return <IndicadoresReport key={activeReport} reportKey={activeReport} onLogout={onLogout} />;
       case 'medicos':
         return <MedicosReport onLogout={onLogout} />;
+      case 'conteo-pruebas':
+        return <ConteoPruebasReport onLogout={onLogout} />;
       default:
         return null;
     }
