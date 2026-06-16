@@ -701,8 +701,8 @@ function IndicadoresReport({ reportKey, onLogout }) {
 
   const today = now.toISOString().slice(0, 10);
   const defaultStart = isDaily
-    ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString().slice(0, 10)
-    : new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString().slice(0, 10);
+    ? today
+    : new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   const defaultEnd = today;
 
   const [startDate, setStartDate] = useState(defaultStart);
