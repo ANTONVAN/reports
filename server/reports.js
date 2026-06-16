@@ -145,7 +145,7 @@ const reports = {
         ),
         Pagos AS (
           SELECT
-            CONVERT(date, DATEADD(hour, -12, S.FechaCreo)) AS FechaTrabajo,
+            CONVERT(date, DATEADD(hour, -12, P.FechaPago)) AS FechaTrabajo,
             S.SucursalId,
             SUM(P.Cantidad) AS TotalPagos
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
@@ -162,7 +162,7 @@ const reports = {
           AND P.FechaPago < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
           AND P.FormaPagoId <> 5
-          GROUP BY CONVERT(date, DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
+          GROUP BY CONVERT(date, DATEADD(hour, -12, P.FechaPago)), S.SucursalId
         )
         SELECT
           CONVERT(varchar(10), S.FechaTrabajo, 120) AS FechaTrabajo,
@@ -224,8 +224,8 @@ const reports = {
         ),
         Pagos AS (
           SELECT
-            YEAR(DATEADD(hour, -12, S.FechaCreo)) AS AnioTrabajo,
-            MONTH(DATEADD(hour, -12, S.FechaCreo)) AS MesTrabajo,
+            YEAR(DATEADD(hour, -12, P.FechaPago)) AS AnioTrabajo,
+            MONTH(DATEADD(hour, -12, P.FechaPago)) AS MesTrabajo,
             S.SucursalId,
             SUM(P.Cantidad) AS TotalPagos
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
@@ -242,7 +242,7 @@ const reports = {
           AND P.FechaPago < DATEADD(day, 1, @endDate)
           AND S.EstatusId <> 3
           AND P.FormaPagoId <> 5
-          GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
+          GROUP BY YEAR(DATEADD(hour, -12, P.FechaPago)), MONTH(DATEADD(hour, -12, P.FechaPago)), S.SucursalId
         )
         SELECT
           CONCAT(S.AnioTrabajo, '-', RIGHT('00' + CAST(S.MesTrabajo AS varchar(2)), 2)) AS MesTrabajo,
@@ -358,8 +358,8 @@ const reports = {
         ),
         Pagos AS (
           SELECT
-            YEAR(DATEADD(hour, -12, S.FechaCreo)) AS AnioTrabajo,
-            MONTH(DATEADD(hour, -12, S.FechaCreo)) AS MesTrabajo,
+            YEAR(DATEADD(hour, -12, P.FechaPago)) AS AnioTrabajo,
+            MONTH(DATEADD(hour, -12, P.FechaPago)) AS MesTrabajo,
             S.MedicoId,
             SUM(P.Cantidad) AS Ingreso
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
@@ -370,7 +370,7 @@ const reports = {
             AND P.FechaPago < DATEADD(day, 1, @endDate)
             AND S.EstatusId <> 3
             AND P.FormaPagoId <> 5
-          GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.MedicoId
+          GROUP BY YEAR(DATEADD(hour, -12, P.FechaPago)), MONTH(DATEADD(hour, -12, P.FechaPago)), S.MedicoId
         ),
         Totales AS (
           SELECT
