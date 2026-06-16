@@ -27,7 +27,7 @@ const AUTH_USERS = JSON.parse(process.env.AUTH_USERS || '[{"username":"admin","p
 
 // Which reports each role can access
 const ROLE_REPORTS = {
-  admin: ['indicadores-daily', 'indicadores-monthly', 'medicos'],
+  admin: ['indicadores-daily', 'indicadores-monthly', 'medicos', 'conteo-pruebas'],
   usuario: ['maquilas'],
 };
 
