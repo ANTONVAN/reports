@@ -398,6 +398,42 @@ const reports = {
       `;
     },
   },
+
+'conteo-pruebas': {
+    params: ['startDate', 'endDate'],
+    meta: {},
+    buildQuery(params, request) {
+      const start = `${params.startDate} 12:00:00`;
+      const end = `${params.endDate} 08:00:00`;
+      request.input('startDate', sql.NVarChar, start);
+      request.input('endDate', sql.NVarChar, end);
+
+      return `
+        SELECT RC.Clave as 'Clave Reactivo'
+            ,RC.Nombre as 'Nombre Reactivo'
+            ,RC.ClaveSistema as 'Clave Contpaq'
+            ,COUNT(*) AS Recuento
+          FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Resultados_Clinicos] AS R
+          INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[Relacion_Reactivo_Parametro] as RP
+            ON R.ParametroId = RP.ParametroId
+          INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Reactivo_Contpaq] as RC
+            ON RP.ReactivoId = RC.Id
+          INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
+            ON R.SolicitudId = S.Id
+          where S.FechaCreo >= '2026-03-23 12:00:00'
+              AND S.FechaCreo < '2026-03-24 08:00:00'
+            AND S.SucursalId IN (
+                '92BB555D-8D08-4107-97A5-6296FBA09A49', --Magdalena de Kino
+                'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5', --Navojoa Talamante
+                '22C17091-64D1-4FFB-9387-147CA43132D2', --Navojoa 02
+                'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09' --San Pedro Garza García
+            )
+        GROUP BY RC.Clave, RC.Nombre, RC.ClaveSistema
+        ORDER BY Recuento DESC;
+      `;
+    },
+  },
+
 };
 
 export default reports;
