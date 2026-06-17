@@ -466,12 +466,25 @@ const reports = {
 
 'conteo-pruebas': {
     params: ['startDate', 'endDate'],
-    meta: {},
+    // Expose filter options so frontend can fetch them
+    meta: {
+      ciudades: CIUDADES
+    },
     buildQuery(params, request) {
       const start = `${params.startDate} 12:00:00`;
       const end = `${params.endDate} 08:00:00`;
       request.input('startDate', sql.NVarChar, start);
       request.input('endDate', sql.NVarChar, end);
+
+      let ciudadFilter = '';
+      if (params.ciudadId) {
+        const cities = params.ciudadId.split(',');
+        const cityParams = cities.map((c, i) => {
+          request.input(`city${i}`, sql.NVarChar, c);
+          return `@city${i}`;
+        }).join(',');
+        ciudadFilter = `AND SU.Ciudad IN (${cityParams})`;
+      }
 
       return `
         SELECT RC.Clave as 'ClaveReactivo'
@@ -485,14 +498,11 @@ const reports = {
             ON RP.ReactivoId = RC.Id
           INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
             ON R.SolicitudId = S.Id
-          where S.FechaCreo >= '2026-03-23 12:00:00'
-              AND S.FechaCreo < '2026-03-24 08:00:00'
-            AND S.SucursalId IN (
-                '92BB555D-8D08-4107-97A5-6296FBA09A49', --Magdalena de Kino
-                'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5', --Navojoa Talamante
-                '22C17091-64D1-4FFB-9387-147CA43132D2', --Navojoa 02
-                'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09' --San Pedro Garza García
-            )
+            INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Sucursal] AS SU
+            ON S.SucursalId = SU.Id
+          where S.FechaCreo >= @startDate
+              AND S.FechaCreo < DATEADD(day, 1, @endDate)
+            ${ciudadFilter}
         GROUP BY RC.Clave, RC.Nombre, RC.ClaveSistema
         ORDER BY Recuento DESC;
       `;
