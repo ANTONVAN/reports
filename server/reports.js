@@ -126,45 +126,45 @@ const reports = {
 
       return `
         WITH Solicitudes AS (
-          SELECT
-            CONVERT(date, DATEADD(hour, -12, S.FechaCreo)) AS FechaTrabajo,
-            S.SucursalId,
-            COUNT(*) AS CantidadSolicitudes
-          FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
-          WHERE S.Procedencia = 2 AND 
-          S.SucursalId IN (
-            '92BB555D-8D08-4107-97A5-6296FBA09A49',
-            'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
-            '22C17091-64D1-4FFB-9387-147CA43132D2',
-            'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
-          )
-          AND S.FechaCreo >= @startDate
-			AND S.FechaCreo < DATEADD(day, 1, @endDate)
-          AND S.EstatusId <> 3
-          GROUP BY CONVERT(date, DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
-        ),
-        Pagos AS (
-          SELECT
-            CONVERT(date, DATEADD(hour, -12, P.FechaPago)) AS FechaTrabajo,
-            S.SucursalId,
-            SUM(P.Cantidad) AS TotalPagos
-          FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
-          LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
-            ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
-          WHERE S.Procedencia = 2 AND 
-          S.SucursalId IN (
-            '92BB555D-8D08-4107-97A5-6296FBA09A49',
-            'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
-            '22C17091-64D1-4FFB-9387-147CA43132D2',
-            'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
-          )
-          AND P.FechaPago >= @startDate
-          AND P.FechaPago < DATEADD(day, 1, @endDate)
-          AND S.EstatusId <> 3
-          AND P.FormaPagoId <> 5
-          GROUP BY CONVERT(date, DATEADD(hour, -12, P.FechaPago)), S.SucursalId
-        ),
-		Reactivos AS (
+    SELECT
+        CONVERT(date, DATEADD(hour, -12, S.FechaCreo)) AS FechaTrabajo,
+        S.SucursalId,
+        COUNT(*) AS CantidadSolicitudes
+    FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
+    WHERE S.Procedencia = 2 
+      AND S.SucursalId IN (
+        '92BB555D-8D08-4107-97A5-6296FBA09A49',
+        'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
+        '22C17091-64D1-4FFB-9387-147CA43132D2',
+        'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
+      )
+      AND S.FechaCreo >= @startDate
+      AND S.FechaCreo < DATEADD(day, 1, @endDate)
+      AND S.EstatusId <> 3
+    GROUP BY CONVERT(date, DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
+),
+Pagos AS (
+    SELECT
+        CONVERT(date, DATEADD(hour, -12, P.FechaPago)) AS FechaTrabajo,
+        S.SucursalId,
+        SUM(P.Cantidad) AS TotalPagos
+    FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
+    LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
+        ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
+    WHERE S.Procedencia = 2 
+      AND S.SucursalId IN (
+        '92BB555D-8D08-4107-97A5-6296FBA09A49',
+        'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
+        '22C17091-64D1-4FFB-9387-147CA43132D2',
+        'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
+      )
+      AND P.FechaPago >= @startDate
+      AND P.FechaPago < DATEADD(day, 1, @endDate)
+      AND S.EstatusId <> 3
+      AND P.FormaPagoId <> 5
+    GROUP BY CONVERT(date, DATEADD(hour, -12, P.FechaPago)), S.SucursalId
+),
+Reactivos AS (
     SELECT
         CONVERT(date, DATEADD(hour, -12, S.FechaCreo)) AS FechaTrabajo,
         S.SucursalId,
@@ -178,7 +178,7 @@ const reports = {
         ON R.SolicitudId = S.Id
     LEFT JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[Pivot_costo_reactivo] AS PCR
         ON RC.Id = PCR.Id
-    WHERE  S.Procedencia = 2 
+    WHERE S.Procedencia = 2 
       AND S.SucursalId IN (
         '92BB555D-8D08-4107-97A5-6296FBA09A49',
         'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
@@ -188,39 +188,42 @@ const reports = {
       AND S.FechaCreo >= @startDate
       AND S.FechaCreo < DATEADD(day, 1, @endDate)
       AND S.EstatusId <> 3
+      AND R.Resultado IS NOT NULL
+      AND LTRIM(RTRIM(R.Resultado)) <> ''
     GROUP BY CONVERT(date, DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
-)
-        SELECT
+      )
+      SELECT
           CONVERT(varchar(10), S.FechaTrabajo, 120) AS FechaTrabajo,
           SU.Clave AS Sucursal,
           S.CantidadSolicitudes,
           ISNULL(P.TotalPagos,0) AS TotalPagos,
           S.CantidadSolicitudes * 13 AS CostoToma,
-		ISNULL(R.CostoReactivo,0) AS CostoReactivo
-        FROM Solicitudes AS S
-        INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Sucursal] AS SU
+          ISNULL(R.CostoReactivo,0) AS CostoReactivo
+      FROM Solicitudes AS S
+      INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Sucursal] AS SU
           ON S.SucursalId = SU.Id
-        LEFT JOIN Pagos AS P
+      LEFT JOIN Pagos AS P
           ON S.SucursalId = P.SucursalId AND S.FechaTrabajo = P.FechaTrabajo
-		  LEFT JOIN Reactivos AS R
-		ON S.SucursalId = R.SucursalId AND S.FechaTrabajo = R.FechaTrabajo
+      LEFT JOIN Reactivos AS R
+          ON S.SucursalId = R.SucursalId AND S.FechaTrabajo = R.FechaTrabajo
 
-        UNION ALL
+      UNION ALL
 
-        SELECT
+      SELECT
           CONVERT(varchar(10), S.FechaTrabajo, 120) AS FechaTrabajo,
           'TOTAL' AS Sucursal,
           SUM(S.CantidadSolicitudes),
           SUM(ISNULL(P.TotalPagos,0)),
           SUM(S.CantidadSolicitudes) * 13,
-		  SUM(ISNULL(R.CostoReactivo,0))
-        FROM Solicitudes AS S
-        LEFT JOIN Pagos AS P
+          SUM(ISNULL(R.CostoReactivo,0))
+      FROM Solicitudes AS S
+      LEFT JOIN Pagos AS P
           ON S.SucursalId = P.SucursalId AND S.FechaTrabajo = P.FechaTrabajo
-		  LEFT JOIN Reactivos AS R
-    ON S.SucursalId = R.SucursalId AND S.FechaTrabajo = R.FechaTrabajo
-        GROUP BY S.FechaTrabajo
-        ORDER BY FechaTrabajo, Sucursal
+      LEFT JOIN Reactivos AS R
+          ON S.SucursalId = R.SucursalId AND S.FechaTrabajo = R.FechaTrabajo
+      GROUP BY S.FechaTrabajo
+      ORDER BY FechaTrabajo, Sucursal;
+
       `;
     },
   },
@@ -236,47 +239,47 @@ const reports = {
 
       return `
         WITH Solicitudes AS (
-          SELECT
-            YEAR(DATEADD(hour, -12, S.FechaCreo)) AS AnioTrabajo,
-            MONTH(DATEADD(hour, -12, S.FechaCreo)) AS MesTrabajo,
-            S.SucursalId,
-            COUNT(*) AS CantidadSolicitudes
-          FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
-          WHERE S.Procedencia = 2 AND 
-          S.SucursalId IN (
-            '92BB555D-8D08-4107-97A5-6296FBA09A49',
-            'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
-            '22C17091-64D1-4FFB-9387-147CA43132D2',
-            'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
-          )
-          AND S.FechaCreo >= @startDate
-		AND S.FechaCreo < DATEADD(day, 1, @endDate)
-          AND S.EstatusId <> 3
-          GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
-        ),
-        Pagos AS (
-          SELECT
-            YEAR(DATEADD(hour, -12, P.FechaPago)) AS AnioTrabajo,
-            MONTH(DATEADD(hour, -12, P.FechaPago)) AS MesTrabajo,
-            S.SucursalId,
-            SUM(P.Cantidad) AS TotalPagos
-          FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
-          LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
-            ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
-          WHERE S.Procedencia = 2 AND 
-          S.SucursalId IN (
-            '92BB555D-8D08-4107-97A5-6296FBA09A49',
-            'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
-            '22C17091-64D1-4FFB-9387-147CA43132D2',
-            'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
-          )
-          AND P.FechaPago >= @startDate
-          AND P.FechaPago < DATEADD(day, 1, @endDate)
-          AND S.EstatusId <> 3
-          AND P.FormaPagoId <> 5
-          GROUP BY YEAR(DATEADD(hour, -12, P.FechaPago)), MONTH(DATEADD(hour, -12, P.FechaPago)), S.SucursalId
-        ),
-		Reactivos AS (
+    SELECT
+        YEAR(DATEADD(hour, -12, S.FechaCreo)) AS AnioTrabajo,
+        MONTH(DATEADD(hour, -12, S.FechaCreo)) AS MesTrabajo,
+        S.SucursalId,
+        COUNT(*) AS CantidadSolicitudes
+    FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
+    WHERE S.Procedencia = 2 
+      AND S.SucursalId IN (
+        '92BB555D-8D08-4107-97A5-6296FBA09A49',
+        'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
+        '22C17091-64D1-4FFB-9387-147CA43132D2',
+        'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
+      )
+      AND S.FechaCreo >= @startDate
+      AND S.FechaCreo < DATEADD(day, 1, @endDate)
+      AND S.EstatusId <> 3
+    GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
+),
+Pagos AS (
+    SELECT
+        YEAR(DATEADD(hour, -12, P.FechaPago)) AS AnioTrabajo,
+        MONTH(DATEADD(hour, -12, P.FechaPago)) AS MesTrabajo,
+        S.SucursalId,
+        SUM(P.Cantidad) AS TotalPagos
+    FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
+    LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
+        ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
+    WHERE S.Procedencia = 2 
+      AND S.SucursalId IN (
+        '92BB555D-8D08-4107-97A5-6296FBA09A49',
+        'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
+        '22C17091-64D1-4FFB-9387-147CA43132D2',
+        'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
+      )
+      AND P.FechaPago >= @startDate
+      AND P.FechaPago < DATEADD(day, 1, @endDate)
+      AND S.EstatusId <> 3
+      AND P.FormaPagoId <> 5
+    GROUP BY YEAR(DATEADD(hour, -12, P.FechaPago)), MONTH(DATEADD(hour, -12, P.FechaPago)), S.SucursalId
+),
+Reactivos AS (
     SELECT
         YEAR(DATEADD(hour, -12, S.FechaCreo)) AS AnioTrabajo,
         MONTH(DATEADD(hour, -12, S.FechaCreo)) AS MesTrabajo,
@@ -299,41 +302,43 @@ const reports = {
         'A5A3F4BF-9330-429C-A0EA-F2BE9F13CA09'
       )
       AND S.FechaCreo >= @startDate
-		AND S.FechaCreo < DATEADD(day, 1, @endDate)
+      AND S.FechaCreo < DATEADD(day, 1, @endDate)
       AND S.EstatusId <> 3
-    GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId
-	)
-        SELECT
+      AND R.Resultado IS NOT NULL
+      AND LTRIM(RTRIM(R.Resultado)) <> ''
+    GROUP BY YEAR(DATEADD(hour, -12, S.FechaCreo)), MONTH(DATEADD(hour, -12, S.FechaCreo)), S.SucursalId, S.Id, PCR.CostoUnitarioConIVA
+)
+      SELECT
           CONCAT(S.AnioTrabajo, '-', RIGHT('00' + CAST(S.MesTrabajo AS varchar(2)), 2)) AS MesTrabajo,
           SU.Clave AS Sucursal,
           S.CantidadSolicitudes,
           ISNULL(P.TotalPagos,0) AS TotalPagos,
           S.CantidadSolicitudes * 13 AS CostoToma,
-		  ISNULL(R.CostoReactivo,0) AS CostoReactivo
-        FROM Solicitudes AS S
-        INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Sucursal] AS SU
+          ISNULL(SUM(R.CostoReactivo),0) AS CostoReactivo
+      FROM Solicitudes AS S
+      INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Sucursal] AS SU
           ON S.SucursalId = SU.Id
-        LEFT JOIN Pagos AS P
+      LEFT JOIN Pagos AS P
           ON S.SucursalId = P.SucursalId AND S.AnioTrabajo = P.AnioTrabajo AND S.MesTrabajo = P.MesTrabajo
-		LEFT JOIN Reactivos AS R
-			ON S.SucursalId = R.SucursalId AND S.AnioTrabajo = R.AnioTrabajo AND S.MesTrabajo = R.MesTrabajo
-
-        UNION ALL
-
-        SELECT
+      LEFT JOIN Reactivos AS R
+          ON S.SucursalId = R.SucursalId AND S.AnioTrabajo = R.AnioTrabajo AND S.MesTrabajo = R.MesTrabajo
+      GROUP BY S.AnioTrabajo, S.MesTrabajo, SU.Clave, S.CantidadSolicitudes, P.TotalPagos
+      UNION ALL
+      SELECT
           CONCAT(S.AnioTrabajo, '-', RIGHT('00' + CAST(S.MesTrabajo AS varchar(2)), 2)) AS MesTrabajo,
           'TOTAL' AS Sucursal,
           SUM(S.CantidadSolicitudes),
           SUM(ISNULL(P.TotalPagos,0)),
           SUM(S.CantidadSolicitudes) * 13,
-			SUM(ISNULL(R.CostoReactivo,0))
-        FROM Solicitudes AS S
-        LEFT JOIN Pagos AS P
+          SUM(ISNULL(R.CostoReactivo,0))
+      FROM Solicitudes AS S
+      LEFT JOIN Pagos AS P
           ON S.SucursalId = P.SucursalId AND S.AnioTrabajo = P.AnioTrabajo AND S.MesTrabajo = P.MesTrabajo
-		  LEFT JOIN Reactivos AS R
-    ON S.SucursalId = R.SucursalId AND S.AnioTrabajo = R.AnioTrabajo AND S.MesTrabajo = R.MesTrabajo
-        GROUP BY S.AnioTrabajo, S.MesTrabajo
-        ORDER BY MesTrabajo, Sucursal
+      LEFT JOIN Reactivos AS R
+          ON S.SucursalId = R.SucursalId AND S.AnioTrabajo = R.AnioTrabajo AND S.MesTrabajo = R.MesTrabajo
+      GROUP BY S.AnioTrabajo, S.MesTrabajo
+      ORDER BY MesTrabajo, Sucursal;
+
       `;
     },
   },
@@ -487,24 +492,27 @@ const reports = {
       }
 
       return `
-        SELECT RC.Clave as 'ClaveReactivo'
-            ,RC.Nombre as 'NombreReactivo'
-            ,RC.ClaveSistema as 'ClaveContpaq'
-            ,COUNT(*) AS Recuento
+        SELECT 
+          RC.Clave AS ClaveReactivo,
+          RC.Nombre AS NombreReactivo,
+          RC.ClaveSistema AS ClaveContpaq,
+          COUNT(DISTINCT S.Id) AS Recuento
           FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Resultados_Clinicos] AS R
-          INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[Relacion_Reactivo_Parametro] as RP
-            ON R.ParametroId = RP.ParametroId
-          INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Reactivo_Contpaq] as RC
-            ON RP.ReactivoId = RC.Id
+          INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[Relacion_Reactivo_Parametro] AS RP
+              ON R.ParametroId = RP.ParametroId
+          INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Reactivo_Contpaq] AS RC
+              ON RP.ReactivoId = RC.Id
           INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
-            ON R.SolicitudId = S.Id
-            INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Sucursal] AS SU
-            ON S.SucursalId = SU.Id
-          where S.FechaCreo >= @startDate
-              AND S.FechaCreo < DATEADD(day, 1, @endDate)
-            ${ciudadFilter}
-        GROUP BY RC.Clave, RC.Nombre, RC.ClaveSistema
-        ORDER BY Recuento DESC;
+              ON R.SolicitudId = S.Id
+          INNER JOIN [LAB_RAMOS_PROD_CATALOGO].[dbo].[CAT_Sucursal] AS SU
+              ON S.SucursalId = SU.Id
+          WHERE S.FechaCreo >= @startDate
+                AND S.FechaCreo < DATEADD(day, 1, @endDate)
+              ${ciudadFilter}
+            AND R.Resultado IS NOT NULL
+            AND LTRIM(RTRIM(R.Resultado)) <> ''
+          GROUP BY RC.Clave, RC.Nombre, RC.ClaveSistema
+          ORDER BY Recuento DESC;
       `;
     },
   },
