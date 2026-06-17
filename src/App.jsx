@@ -611,6 +611,7 @@ const indicadoresDailyColumns = [
   { accessorKey: 'CantidadSolicitudes', header: 'Solicitudes', cell: ({ getValue }) => Number(getValue()).toLocaleString('es-MX') },
   { accessorKey: 'TotalPagos', header: 'Total Pagos', cell: ({ getValue }) => formatCurrency(getValue()) },
   { accessorKey: 'CostoToma', header: 'Costo Toma', cell: ({ getValue }) => formatCurrency(getValue()) },
+  { accessorKey: 'CostoReactivo', header: 'Costo Reactivo', cell: ({ getValue }) => formatCurrency(getValue()) },
 ];
 
 const indicadoresMonthlyColumns = [
@@ -621,6 +622,7 @@ const indicadoresMonthlyColumns = [
   { accessorKey: 'CantidadSolicitudes', header: 'Solicitudes', cell: ({ getValue }) => Number(getValue()).toLocaleString('es-MX') },
   { accessorKey: 'TotalPagos', header: 'Total Pagos', cell: ({ getValue }) => formatCurrency(getValue()) },
   { accessorKey: 'CostoToma', header: 'Costo Toma', cell: ({ getValue }) => formatCurrency(getValue()) },
+  { accessorKey: 'CostoReactivo', header: 'Costo Reactivo', cell: ({ getValue }) => formatCurrency(getValue()) },
 ];
 
 function exportIndicadoresExcel(data, reportType) {
@@ -628,13 +630,14 @@ function exportIndicadoresExcel(data, reportType) {
   const isDaily = reportType === 'daily';
   const dateKey = isDaily ? 'FechaTrabajo' : 'MesTrabajo';
   const dateHeader = isDaily ? 'Fecha' : 'Mes';
-  const headers = [dateHeader, 'Sucursal', 'Solicitudes', 'Total Pagos', 'Costo Toma'];
+  const headers = [dateHeader, 'Sucursal', 'Solicitudes', 'Total Pagos', 'Costo Toma', 'Costo Reactivo'];
   const rows = data.map(row => ({
     [dateHeader]: row[dateKey],
     'Sucursal': row.Sucursal,
     'Solicitudes': row.CantidadSolicitudes,
     'Total Pagos': row.TotalPagos,
     'Costo Toma': row.CostoToma,
+    'Costo Reactivo': row.CostoReactivo,
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 16) }));
@@ -663,13 +666,14 @@ function exportIndicadoresPDF(data, reportType, startDate, endDate) {
 
   autoTable(doc, {
     startY: m + 20,
-    head: [[dateHeader, 'Sucursal', 'Solicitudes', 'Total Pagos', 'Costo Toma']],
+    head: [[dateHeader, 'Sucursal', 'Solicitudes', 'Total Pagos', 'Costo Toma', 'Costo Reactivo']],
     body: data.map(row => [
       row[dateKey],
       row.Sucursal,
       Number(row.CantidadSolicitudes).toLocaleString('es-MX'),
       formatCurrency(row.TotalPagos),
       formatCurrency(row.CostoToma),
+      formatCurrency(row.CostoReactivo),
     ]),
     styles: { fontSize: 8, cellPadding: 2 },
     headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
