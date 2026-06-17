@@ -1005,22 +1005,28 @@ function ConteoPruebasReport({ onLogout }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [selectedCiudades, setSelectedCiudades] = useState([]);
+
+  const [meta, setMeta] = useState({ ciudades: [] });
+
+  useEffect(() => {
+    authFetch(`${API_BASE}/api/reports/conteo-pruebas/meta`).then(r => r.json()).then(setMeta).catch(() => {});
+  }, []);
 
   const fetchData = async () => {
     setLoading(true); setError(null);
     try {
       const params = new URLSearchParams({ startDate, endDate });
+      if (selectedCiudades.length) params.set('ciudadId', selectedCiudades.join(','));
       const res = await authFetch(`${API_BASE}/api/reports/conteo-pruebas?${params}`);
       if (res.status === 401) { onLogout(); return; }
       if (!res.ok) throw new Error(`Error ${res.status}`);
-      const json = await res.json();
-      // Mark TOTAL rows for styling
-      setData(json.map(row => ({ ...row, _isTotal: row.Sucursal === 'TOTAL' })));
+      setData(await res.json());
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+    useEffect(() => { fetchData(); }, []);
 
   return (
     <>
@@ -1033,6 +1039,8 @@ function ConteoPruebasReport({ onLogout }) {
           <label>Fecha Fin</label>
           <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
+        <MultiSearchSelect label="Ciudad" icon={MapPin} options={meta.ciudades} selected={selectedCiudades}
+          onChange={setSelectedCiudades} getLabel={c => c} getValue={c => c} allLabel="Todas" />
         <button className="btn-primary" onClick={fetchData} disabled={loading}>
           {loading ? <Loader2 className="spin" size={16} /> : 'Consultar'}
         </button>
