@@ -151,8 +151,8 @@ Pagos AS (
     FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
     LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
         ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
-    WHERE S.Procedencia = 2 
-      AND S.SucursalId IN (
+    WHERE --S.Procedencia = 2 AND
+       S.SucursalId IN (
         '92BB555D-8D08-4107-97A5-6296FBA09A49',
         'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
         '22C17091-64D1-4FFB-9387-147CA43132D2',
@@ -266,8 +266,8 @@ Pagos AS (
     FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] AS S
     LEFT JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Pago] AS P
         ON S.Id = P.SolicitudId AND P.EstatusId IN (1,2)
-    WHERE S.Procedencia = 2 
-      AND S.SucursalId IN (
+    WHERE --S.Procedencia = 2 AND
+       S.SucursalId IN (
         '92BB555D-8D08-4107-97A5-6296FBA09A49',
         'C4B35CF3-F6C9-4F26-8085-8202B51C7FC5',
         '22C17091-64D1-4FFB-9387-147CA43132D2',
