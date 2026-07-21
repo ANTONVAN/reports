@@ -162,6 +162,8 @@ Pagos AS (
       AND P.FechaPago < DATEADD(day, 1, @endDate)
       AND S.EstatusId <> 3
       AND P.FormaPagoId <> 5
+      AND (P.CompañiaId IS NULL OR LTRIM(RTRIM(P.CompañiaId)) = '')
+	  AND (P.CompañiaNombre IS NULL OR LTRIM(RTRIM(P.CompañiaNombre)) = '')
     GROUP BY CONVERT(date, DATEADD(hour, -12, P.FechaPago)), S.SucursalId
 ),
 Reactivos AS (
@@ -277,6 +279,8 @@ Pagos AS (
       AND P.FechaPago < DATEADD(day, 1, @endDate)
       AND S.EstatusId <> 3
       AND P.FormaPagoId <> 5
+      AND (P.CompañiaId IS NULL OR LTRIM(RTRIM(P.CompañiaId)) = '')
+	  AND (P.CompañiaNombre IS NULL OR LTRIM(RTRIM(P.CompañiaNombre)) = '')
     GROUP BY YEAR(DATEADD(hour, -12, P.FechaPago)), MONTH(DATEADD(hour, -12, P.FechaPago)), S.SucursalId
 ),
 Reactivos AS (
