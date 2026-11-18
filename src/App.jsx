@@ -41,6 +41,7 @@ import {
   Users,
   TrendingUp,
   Activity,
+  Clock,
 } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
@@ -121,7 +122,8 @@ const REPORT_CONFIG = {
   'indicadores-monthly': { name: 'Indicadores Mensual', icon: BarChart3 },
   'medicos': { name: 'Reporte de Médicos', icon: Stethoscope },
   'maquilas': { name: 'Reporte de Maquilas', icon: Factory },
-  'conteo-pruebas': { name: 'Conteo de Pruebas', icon: ClipboardList }
+  'conteo-pruebas': { name: 'Conteo de Pruebas', icon: ClipboardList },
+  'mayor-24hrs': { name: 'Mayor a 24 Horas', icon: Clock }
 };
 
 // ─── Multi-select component ────────────────────────────────────────
@@ -367,7 +369,7 @@ const maquilasColumns = [
 
 function exportMaquilasCSV(data) {
   if (!data.length) return;
-  const headers = ['Sucursal','Solicitud','Nombre Paciente','Medico','Clave Estudio','Nombre Estudio','Estatus','Maquilador','Urgencia','Fecha de Entrega'];
+  const headers = ['Sucursal','Solicitud','Paciente','Medico','Clave Estudio','Nombre Estudio','Estatus','Maquilador','Urgencia','Fecha de Entrega'];
   const keys = ['Sucursal','Solicitud','NombrePaciente','Medico','ClaveEstudio','NombreEstudio','Estatus','Maquilador','Urgencia','FechaEntrega'];
   const csv = [
     headers.join(','),
@@ -384,7 +386,7 @@ function exportMaquilasCSV(data) {
 
 function exportMaquilasExcel(data) {
   if (!data.length) return;
-  const headers = ['Sucursal','Solicitud','Nombre Paciente','Médico','Clave Estudio','Nombre Estudio','Estatus','Maquilador','Urgencia','Fecha de Entrega'];
+  const headers = ['Sucursal','Solicitud','Paciente','Médico','Clave Estudio','Nombre Estudio','Estatus','Maquilador','Urgencia','Fecha de Entrega'];
   const keys = ['Sucursal','Solicitud','NombrePaciente','Medico','ClaveEstudio','NombreEstudio','Estatus','Maquilador','Urgencia','FechaEntrega'];
   const rows = data.map((row) =>
     keys.reduce((acc, key, i) => {
@@ -1067,6 +1069,168 @@ function ConteoPruebasReport({ onLogout }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// REPORTE DE MAYOR A 24 HRS
+// ═══════════════════════════════════════════════════════════════════
+
+const mayor24hrsColumns = [
+  { accessorKey: 'OrdenSeguimiento', header: 'Seguimiento' },
+  { accessorKey: 'Solicitud', header: 'Solicitud'},
+  { accessorKey: 'NombrePaciente', header: 'Paciente'},
+  { accessorKey: 'Expediente', header: 'Expediente'},
+  { accessorKey: 'NombreRuta', header: 'Ruta' },
+  { accessorKey: 'FechaValidacion', header: 'Fecha de Validado', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'UsuarioValidacion', header: 'Usuario Validó'},
+  { accessorKey: 'FechaLiberado', header: 'Fecha de Liberado', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'UsuarioLiberacion', header: 'Usuario Liberó' },
+  { accessorKey: 'FechaEntrega', header: 'Fecha de Entrega', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'FechaEnviado', header: 'Fecha de Enviado', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'Muestra', header: 'Muestra'},
+  { accessorKey: 'HorasTranscurridas', header: 'Horas Transcurridas', cell: ({ getValue }) => Number(getValue()).toLocaleString('es-MX')}
+];
+
+function exportMayor24hrsExcel(data) {
+  if (!data.length) return;
+  const headers = ['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestra', 'Horas Transcurridas'];
+  const rows = data.map(row => ({
+    'Seguimiento': row.OrdenSeguimiento,
+    'Solicitud': row.Solicitud,
+    'Nombre Paciente': row.NombrePaciente,
+    'Expediente': row.Expediente,
+    'Ruta': row.NombreRuta,
+    'Fecha de Validado': row.FechaValidacion,
+    'Usuario Validó': row.UsuarioValidacion,
+    'Fecha de Liberado': row.FechaLiberado,
+    'Usuario Liberó': row.UsuarioLiberacion,
+    'Fecha de Entrega': row.FechaEntrega,
+    'Fecha de Enviado': row.FechaEnviado,
+    'Muestra': row.Muestra,
+    'Horas Transcurridas': row.HorasTranscurridas,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 16) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Mayor a 24 horas');
+  XLSX.writeFile(wb, `mayor_24hrs_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function exportMayor24hrsPDF(data, startDate, endDate) {
+  if (!data.length) return;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const m = 15;
+
+  doc.setFontSize(11); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+  doc.text('Laboratorio Alfonso Ramos S.A de C.V.', pageW / 2, m + 4, { align: 'center' });
+  doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  doc.text('MUESTRAS MAYOR A 24 HRS', pageW / 2, m + 10, { align: 'center' });
+  doc.setFontSize(7); doc.setTextColor(100);
+  doc.text(`Fecha Inicio: ${startDate}    Fecha Fin: ${endDate}`, pageW / 2, m + 15, { align: 'center' });
+
+  autoTable(doc, {
+    startY: m + 20,
+    head: [['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestra', 'Horas Transcurridas']],
+    body: data.map(row => [
+    row.OrdenSeguimiento,
+    row.Solicitud,
+    row.NombrePaciente,
+    row.Expediente,
+    row.NombreRuta,
+    row.FechaValidacion,
+    row.UsuarioValidacion,
+    row.FechaLiberado,
+    row.UsuarioLiberacion,
+    row.FechaEntrega,
+    row.FechaEnviado,
+    row.Muestra,
+    Number(row.HorasTranscurridas).toLocaleString('es-MX'),
+    ]),
+    styles: { fontSize: 7, cellPadding: 1 },
+    headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {},
+    margin: { left: m, right: m },
+  });
+
+  const tp = doc.getNumberOfPages();
+  for (let i = 1; i <= tp; i++) {
+    doc.setPage(i);
+    doc.setFontSize(6); doc.setTextColor(120); doc.setFont(undefined, 'normal');
+    const ts = `${new Date().toLocaleDateString('es-MX')} ${new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`;
+    doc.text(ts, m, pageH - 8);
+    doc.text('Este informe no podrá ser reproducido total o parcialmente.', m, pageH - 4);
+    doc.text(`Página ${i}/${tp}`, pageW - m, pageH - 8, { align: 'right' });
+  }
+
+  doc.save(`mayor_24hrs_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+function Mayor24hrsReport({ onLogout }) {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const defaultStart = today;
+  const defaultEnd = today;
+
+  const [startDate, setStartDate] = useState(`${now.getFullYear()}-01-01`);
+  const [endDate, setEndDate] = useState(defaultEnd);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  const fetchData = async () => {
+    setLoading(true); setError(null);
+    try {
+      const params = new URLSearchParams({ startDate, endDate });
+      const res = await authFetch(`${API_BASE}/api/reports/mayor-24hrs?${params}`);
+      if (res.status === 401) { onLogout(); return; }
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const json = await res.json();
+      // Mark TOTAL rows for styling
+      setData(json.map(row => ({ ...row, _isTotal: row.Sucursal === 'TOTAL' })));
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  return (
+    <>
+      <section className="filters">
+        <div className="filter-group">
+          <label>Fecha Inicio</label>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
+        <div className="filter-group">
+          <label>Fecha Fin</label>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
+        <button className="btn-primary" onClick={fetchData} disabled={loading}>
+          {loading ? <Loader2 className="spin" size={16} /> : 'Consultar'}
+        </button>
+        <div className="export-group">
+          <button className="btn-secondary btn-excel" onClick={() => exportMayor24hrsExcel(data)} disabled={!data.length}>
+            <FileSpreadsheet size={16} /> Excel
+          </button>
+          <button className="btn-secondary btn-pdf" onClick={() => exportMayor24hrsPDF(data, startDate, endDate)} disabled={!data.length}>
+            <FileText size={16} /> PDF
+          </button>
+        </div>
+      </section>
+
+      {error && <div className="error-msg">Error: {error}</div>}
+
+      <section className="search-bar">
+        <Search size={18} className="search-icon" />
+        <input type="text" placeholder="Buscar..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} />
+      </section>
+
+      <DataTable data={data} columns={mayor24hrsColumns} loading={loading} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // DASHBOARD VIEW (KPIs + Charts)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1376,7 +1540,7 @@ export default function App() {
 
 function Dashboard({ username, role, onLogout }) {
   const allowedReports = role === 'admin'
-    ? ['dashboard', 'indicadores-daily', 'indicadores-monthly', 'medicos', 'conteo-pruebas']
+    ? ['dashboard', 'indicadores-daily', 'indicadores-monthly', 'medicos', 'conteo-pruebas', 'mayor-24hrs']
     : ['dashboard', 'maquilas'];
 
   const [activeReport, setActiveReport] = useState(allowedReports[0]);
@@ -1399,6 +1563,8 @@ function Dashboard({ username, role, onLogout }) {
         return <MedicosReport onLogout={onLogout} />;
       case 'conteo-pruebas':
         return <ConteoPruebasReport onLogout={onLogout} />;
+      case 'mayor-24hrs':
+        return <Mayor24hrsReport onLogout={onLogout} />;
       default:
         return null;
     }

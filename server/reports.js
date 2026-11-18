@@ -521,6 +521,85 @@ Reactivos AS (
     },
   },
 
+  'mayor-24hrs': {
+    params: ['startDate', 'endDate'],
+    // Expose filter options so frontend can fetch them
+    meta: {},
+    buildQuery(params, request) {
+      const start = `${params.startDate} 12:00:00`;
+      const end = `${params.endDate} 08:00:00`;
+      request.input('startDate', sql.NVarChar, start);
+      request.input('endDate', sql.NVarChar, end);
+
+      return `
+        ;WITH EstudiosMayor24Hrs AS
+(
+    SELECT
+          HS.Clave as OrdenSeguimiento
+        , S.Clave AS Solicitud
+        , (ISNULL(E.NombrePaciente,'') + ' '
+         + ISNULL(E.PrimerApellido,'') + ' '
+         + ISNULL(E.SegundoApellido,'')) AS NombrePaciente
+        , E.Expediente
+        , HS.NombreRuta
+        , RS.FechaValidacion
+        , ISNULL((RS.ClaveUsuarioValidacion + ' - ' + RS.UsuarioValidacion),'') AS UsuarioValidacion
+        , RS.FechaLiberado
+        , ISNULL((RS.ClaveUsuarioLiberado + ' - ' + RS.UsuarioLiberado),'') AS UsuarioLiberacion
+		, RS.FechaEntrega
+		, RS.FechaEnviado
+        , RS.Clave AS Muestra
+        , DATEDIFF(HOUR, RS.FechaValidacion, RS.FechaLiberado) AS HorasTranscurridas
+
+        , ROW_NUMBER() OVER
+        (
+            PARTITION BY S.Id
+            ORDER BY RS.FechaValidacion
+        ) AS RN
+
+    FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] S
+    INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Historial_Relacion_Seguimiento_Solicitud] H
+        ON H.SolicitudId = S.Id
+    INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Historial_Seguimiento_Ruta] HS
+        ON H.HistorialId = HS.Id
+    INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Expedientes] E
+        ON S.ExpedienteId = E.Id
+    INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Etiqueta_Estudio] RE
+        ON H.EtiquetaId = RE.SolicitudEtiquetaId
+    INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Estudio] RS
+        ON RE.SolicitudEstudioId = RS.Id
+
+    WHERE H.FechaCreo >= @startDate
+      AND H.FechaCreo < DATEADD(day, 1, @endDate)
+      AND HS.OrigenId = 'a5a3f4bf-9330-429c-a0ea-f2be9f13ca09'
+      AND HS.DestinoId IN (
+            '698e416e-e5cb-4e7a-90ed-74448d408f20',
+            'de8c4cae-0d30-485a-89cc-f470e8c81f5d'
+        )
+      AND RS.FechaLiberado > DATEADD(HOUR,24,RS.FechaValidacion)
+    )
+
+    SELECT
+          OrdenSeguimiento
+        , Solicitud
+        , NombrePaciente
+        , Expediente
+        , NombreRuta
+        , FechaValidacion
+        , UsuarioValidacion
+        , FechaLiberado
+        , UsuarioLiberacion
+      , FechaEntrega
+      , FechaEnviado
+        , Muestra
+        , HorasTranscurridas
+    FROM EstudiosMayor24Hrs
+    WHERE RN = 1
+    ORDER BY OrdenSeguimiento;
+      `;
+    },
+  },
+
 };
 
 export default reports;
