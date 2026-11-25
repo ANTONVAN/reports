@@ -1084,13 +1084,13 @@ const mayor24hrsColumns = [
   { accessorKey: 'UsuarioLiberacion', header: 'Usuario Liberó' },
   { accessorKey: 'FechaEntrega', header: 'Fecha de Entrega', cell: ({ getValue }) => formatDate(getValue())},
   { accessorKey: 'FechaEnviado', header: 'Fecha de Enviado', cell: ({ getValue }) => formatDate(getValue())},
-  { accessorKey: 'Muestra', header: 'Muestra'},
+  { accessorKey: 'Muestras', header: 'Muestras'},
   { accessorKey: 'HorasTranscurridas', header: 'Horas Transcurridas', cell: ({ getValue }) => Number(getValue()).toLocaleString('es-MX')}
 ];
 
 function exportMayor24hrsExcel(data) {
   if (!data.length) return;
-  const headers = ['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestra', 'Horas Transcurridas'];
+  const headers = ['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas'];
   const rows = data.map(row => ({
     'Seguimiento': row.OrdenSeguimiento,
     'Solicitud': row.Solicitud,
@@ -1103,7 +1103,7 @@ function exportMayor24hrsExcel(data) {
     'Usuario Liberó': row.UsuarioLiberacion,
     'Fecha de Entrega': row.FechaEntrega,
     'Fecha de Enviado': row.FechaEnviado,
-    'Muestra': row.Muestra,
+    'Muestras': row.Muestras,
     'Horas Transcurridas': row.HorasTranscurridas,
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -1129,7 +1129,7 @@ function exportMayor24hrsPDF(data, startDate, endDate) {
 
   autoTable(doc, {
     startY: m + 20,
-    head: [['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestra', 'Horas Transcurridas']],
+    head: [['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas']],
     body: data.map(row => [
     row.OrdenSeguimiento,
     row.Solicitud,
@@ -1142,7 +1142,7 @@ function exportMayor24hrsPDF(data, startDate, endDate) {
     row.UsuarioLiberacion,
     row.FechaEntrega,
     row.FechaEnviado,
-    row.Muestra,
+    row.Muestras,
     Number(row.HorasTranscurridas).toLocaleString('es-MX'),
     ]),
     styles: { fontSize: 7, cellPadding: 1 },
