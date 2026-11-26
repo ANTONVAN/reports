@@ -1073,10 +1073,10 @@ function ConteoPruebasReport({ onLogout }) {
 // ═══════════════════════════════════════════════════════════════════
 
 const mayor24hrsColumns = [
-  { accessorKey: 'OrdenSeguimiento', header: 'Seguimiento' },
+  //{ accessorKey: 'OrdenSeguimiento', header: 'Seguimiento' },
   { accessorKey: 'Solicitud', header: 'Solicitud'},
   { accessorKey: 'NombrePaciente', header: 'Paciente'},
-  { accessorKey: 'Expediente', header: 'Expediente'},
+ // { accessorKey: 'Expediente', header: 'Expediente'},
   { accessorKey: 'NombreRuta', header: 'Ruta' },
   { accessorKey: 'FechaValidacion', header: 'Fecha de Validado', cell: ({ getValue }) => formatDate(getValue())},
   { accessorKey: 'UsuarioValidacion', header: 'Usuario Validó'},
@@ -1090,12 +1090,12 @@ const mayor24hrsColumns = [
 
 function exportMayor24hrsExcel(data) {
   if (!data.length) return;
-  const headers = ['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas'];
+  const headers = ['Solicitud', 'Paciente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas'];
   const rows = data.map(row => ({
-    'Seguimiento': row.OrdenSeguimiento,
+    //'Seguimiento': row.OrdenSeguimiento,
     'Solicitud': row.Solicitud,
     'Nombre Paciente': row.NombrePaciente,
-    'Expediente': row.Expediente,
+    //'Expediente': row.Expediente,
     'Ruta': row.NombreRuta,
     'Fecha de Validado': row.FechaValidacion,
     'Usuario Validó': row.UsuarioValidacion,
@@ -1129,12 +1129,12 @@ function exportMayor24hrsPDF(data, startDate, endDate) {
 
   autoTable(doc, {
     startY: m + 20,
-    head: [['Seguimiento', 'Solicitud', 'Paciente', 'Expediente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas']],
+    head: [['Solicitud', 'Paciente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas']],
     body: data.map(row => [
-    row.OrdenSeguimiento,
+    //row.OrdenSeguimiento,
     row.Solicitud,
     row.NombrePaciente,
-    row.Expediente,
+    //row.Expediente,
     row.NombreRuta,
     row.FechaValidacion,
     row.UsuarioValidacion,
@@ -1168,10 +1168,10 @@ function exportMayor24hrsPDF(data, startDate, endDate) {
 function Mayor24hrsReport({ onLogout }) {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
-  const defaultStart = today;
+  const defaultStart = useState(`${now.getFullYear()}-01-01`);
   const defaultEnd = today;
 
-  const [startDate, setStartDate] = useState(`${now.getFullYear()}-01-01`);
+  const [startDate, setStartDate] = defaultStart;
   const [endDate, setEndDate] = useState(defaultEnd);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);

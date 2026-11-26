@@ -594,7 +594,8 @@ Reactivos AS (
     INNER JOIN [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[Relacion_Solicitud_Estudio] RS
         ON RE.SolicitudEstudioId = RS.Id
 
-    WHERE H.FechaCreo >= '2026-01-01 10:00:00'
+    WHERE H.FechaCreo >= @startDate
+      AND H.FechaCreo < DATEADD(day, 1, @endDate)
       AND HS.OrigenId = 'a5a3f4bf-9330-429c-a0ea-f2be9f13ca09'
       AND HS.DestinoId IN
       (
