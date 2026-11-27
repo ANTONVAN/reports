@@ -1078,19 +1078,19 @@ const mayor24hrsColumns = [
   { accessorKey: 'NombrePaciente', header: 'Paciente'},
  // { accessorKey: 'Expediente', header: 'Expediente'},
   { accessorKey: 'NombreRuta', header: 'Ruta' },
-  { accessorKey: 'FechaValidacion', header: 'Fecha de Validado', cell: ({ getValue }) => formatDate(getValue())},
-  { accessorKey: 'UsuarioValidacion', header: 'Usuario Validó'},
-  { accessorKey: 'FechaLiberado', header: 'Fecha de Liberado', cell: ({ getValue }) => formatDate(getValue())},
-  { accessorKey: 'UsuarioLiberacion', header: 'Usuario Liberó' },
-  { accessorKey: 'FechaEntrega', header: 'Fecha de Entrega', cell: ({ getValue }) => formatDate(getValue())},
-  { accessorKey: 'FechaEnviado', header: 'Fecha de Enviado', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'FechaValidacion', header: 'Fecha Validado', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'UsuarioValidacion', header: 'Validó'},
+  { accessorKey: 'FechaLiberado', header: 'Fecha Liberado', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'UsuarioLiberacion', header: 'Liberó' },
+  { accessorKey: 'FechaEntrega', header: 'Fecha Entrega', cell: ({ getValue }) => formatDate(getValue())},
+  { accessorKey: 'FechaEnviado', header: 'Fecha Enviado', cell: ({ getValue }) => formatDate(getValue())},
   { accessorKey: 'Muestras', header: 'Muestras'},
   { accessorKey: 'HorasTranscurridas', header: 'Horas Transcurridas', cell: ({ getValue }) => Number(getValue()).toLocaleString('es-MX')}
 ];
 
 function exportMayor24hrsExcel(data) {
   if (!data.length) return;
-  const headers = ['Solicitud', 'Paciente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas'];
+  const headers = ['Solicitud', 'Paciente', 'Ruta', 'Fecha Validado', 'Validó', 'Fecha Liberado', 'Liberó', 'Fecha Entrega', 'Fecha Enviado', 'Muestras', 'Horas Transcurridas'];
   const rows = data.map(row => ({
     //'Seguimiento': row.OrdenSeguimiento,
     'Solicitud': row.Solicitud,
@@ -1129,7 +1129,7 @@ function exportMayor24hrsPDF(data, startDate, endDate) {
 
   autoTable(doc, {
     startY: m + 20,
-    head: [['Solicitud', 'Paciente', 'Ruta', 'Fecha de Validado', 'Usuario Validó', 'Fecha de Liberado', 'Usuario Liberó', 'Fecha de Entrega', 'Fecha de Enviado', 'Muestras', 'Horas Transcurridas']],
+    head: [['Solicitud', 'Paciente', 'Ruta', 'Fecha Validado', 'Validó', 'Fecha Liberado', 'Liberó', 'Fecha Entrega', 'Fecha Enviado', 'Muestras', 'Horas Transcurridas']],
     body: data.map(row => [
     //row.OrdenSeguimiento,
     row.Solicitud,

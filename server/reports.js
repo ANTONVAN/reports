@@ -563,7 +563,7 @@ Reactivos AS (
         , DATEDIFF(
             HOUR,
             RS.FechaValidacion,
-            RS.FechaLiberado
+            RS.FechaEnviado
           ) AS HorasTranscurridas
 
         , ROW_NUMBER() OVER
@@ -572,9 +572,9 @@ Reactivos AS (
             ORDER BY DATEDIFF(
                         HOUR,
                         RS.FechaValidacion,
-                        RS.FechaLiberado
+                        RS.FechaEnviado
                      ) DESC,
-                     RS.FechaLiberado DESC
+                     RS.FechaEnviado DESC
         ) AS RN
 
     FROM [LAB_RAMOS_PROD_EXPEDIENTE].[dbo].[CAT_Solicitud] S
@@ -602,7 +602,7 @@ Reactivos AS (
           '698e416e-e5cb-4e7a-90ed-74448d408f20',
           'de8c4cae-0d30-485a-89cc-f470e8c81f5d'
       )
-      AND RS.FechaLiberado > DATEADD(
+      AND RS.FechaEnviado > DATEADD(
                                 HOUR,
                                 24,
                                 RS.FechaValidacion
